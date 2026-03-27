@@ -510,8 +510,8 @@ export default function AliasGame() {
   // ─── CATEGORY PICK ─────────────────────────────────────────────
   if (phase === PHASE.CATEGORY_PICK) {
     const roundCategoryKeys = [
-      ...selectedCategories.filter((c) => c !== "custom"),
-      ...(customWords.length > 0 && selectedCategories.includes("custom") ? ["custom"] : []),
+      ...Object.keys(t.categories),
+      ...(customWords.length > 0 ? ["custom"] : []),
     ];
     return (
       <div dir={dir} className={`min-h-screen ${themeBg} flex flex-col items-center justify-center p-4`}>
