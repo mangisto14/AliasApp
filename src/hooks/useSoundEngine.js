@@ -104,7 +104,7 @@ export function useSoundEngine(enabled = true) {
       const ctx = getContext();
       if (ctx.state === "suspended") ctx.resume();
       resumedRef.current = true;
-    } catch (e) { /* silent */ }
+    } catch { /* silent */ }
   }, [getContext]);
 
   // Auto-attach resume listener on mount
@@ -125,7 +125,7 @@ export function useSoundEngine(enabled = true) {
       if (ctx.state === "suspended") ctx.resume();
       const fn = SOUND_DEFS[soundName];
       if (fn) fn(ctx, ctx.currentTime);
-    } catch (e) { /* silent */ }
+    } catch { /* silent */ }
   }, [enabled, getContext]);
 
   const playCorrect = useCallback(() => play("correct"), [play]);

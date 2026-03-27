@@ -6,6 +6,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+// Confetti positions computed once at module level (stable, no re-render issues)
+const CONFETTI_ITEMS = [...Array(20)].map((_, i) => ({
+  idx: i,
+  left: `${Math.random() * 100}%`,
+  animationDelay: `${Math.random() * 2}s`,
+  animationDuration: `${2 + Math.random() * 2}s`,
+}));
+
 // ─── Data & Config ─────────────────────────────────────────────────
 import {
   KIDS_WORDS,
@@ -32,10 +40,10 @@ async function storageGet(key) {
       const r = await window.storage.get(key);
       if (r?.value != null) return r.value;
     }
-  } catch (e) {}
+  } catch { /* silent */ }
   try {
     return localStorage.getItem(key);
-  } catch (e) {}
+  } catch { /* silent */ }
   return null;
 }
 
@@ -45,10 +53,10 @@ async function storageSet(key, value) {
       await window.storage.set(key, value);
       return;
     }
-  } catch (e) {}
+  } catch { /* silent */ }
   try {
     localStorage.setItem(key, value);
-  } catch (e) {}
+  } catch { /* silent */ }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -212,7 +220,7 @@ export default function AliasGame() {
       if (!raw) return;
       try {
         setLeaderboardData(JSON.parse(raw));
-      } catch (e) {}
+      } catch { /* silent */ }
     })();
   }, []);
 
@@ -220,46 +228,6 @@ export default function AliasGame() {
   useEffect(() => {
     return () => clearInterval(timerRef.current);
   }, []);
-
-  // Ready countdown: 3 → 2 → 1 → start
-  useEffect(() => {
-    if (phase !== PHASE.READY) return;
-    setReadyCount(3);
-    const id = setInterval(() => {
-      setReadyCount((p) => {
-        if (p <= 1) {
-          clearInterval(id);
-          void startPlaying();
-          return 0;
-        }
-        return p - 1;
-      });
-    }, 800);
-    return () => clearInterval(id);
-  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Game timer with tick sounds, vibration, and auto-end
-  useEffect(() => {
-    if (phase !== PHASE.PLAYING || isPaused) {
-      clearInterval(timerRef.current);
-      return;
-    }
-    timerRef.current = setInterval(() => {
-      setTimeLeft((p) => {
-        if (p <= 11 && p > 1) sound.playTick();
-        if (p <= 5 && p > 1 && vibrationEnabled) vibrate(50);
-        if (p <= 1) {
-          clearInterval(timerRef.current);
-          sound.playAlarm();
-          if (vibrationEnabled) vibrate([200, 100, 200]);
-          setPhase(PHASE.SUMMARY);
-          return 0;
-        }
-        return p - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [phase, isPaused, sound, vibrationEnabled]);
 
   // ═══════════════════════════════════════════════════════════════
   // GAME LOGIC
@@ -289,6 +257,47 @@ export default function AliasGame() {
     setIsPaused(false);
     setPhase(PHASE.PLAYING);
   }, [roundCategoryKey, lang, difficulty, kidsMode, customWords, gameMode, timerDuration]);
+
+  // Ready countdown: 3 → 2 → 1 → start
+  useEffect(() => {
+    if (phase !== PHASE.READY) return;
+    let count = 3;
+    const tick = () => {
+      setReadyCount(count);
+      if (count <= 1) {
+        clearInterval(id);
+        void startPlaying();
+        return;
+      }
+      count -= 1;
+    };
+    tick();
+    const id = setInterval(tick, 800);
+    return () => clearInterval(id);
+  }, [phase, startPlaying]);
+
+  // Game timer with tick sounds, vibration, and auto-end
+  useEffect(() => {
+    if (phase !== PHASE.PLAYING || isPaused) {
+      clearInterval(timerRef.current);
+      return;
+    }
+    timerRef.current = setInterval(() => {
+      setTimeLeft((p) => {
+        if (p <= 11 && p > 1) sound.playTick();
+        if (p <= 5 && p > 1 && vibrationEnabled) vibrate(50);
+        if (p <= 1) {
+          clearInterval(timerRef.current);
+          sound.playAlarm();
+          if (vibrationEnabled) vibrate([200, 100, 200]);
+          setPhase(PHASE.SUMMARY);
+          return 0;
+        }
+        return p - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [phase, isPaused, sound, vibrationEnabled]);
 
   /** nextWord — Handles "Got It" action */
   const handleGotIt = useCallback(() => {
@@ -452,7 +461,7 @@ export default function AliasGame() {
       const updated = [entry, ...leaderboardData].slice(0, 20);
       setLeaderboardData(updated);
       await storageSet(LB_KEY, JSON.stringify(updated));
-    } catch (e) {}
+    } catch { /* silent */ }
   };
 
   const resetGame = () => {
@@ -1046,10 +1055,10 @@ export default function AliasGame() {
 
     return (
       <div dir={dir} className={`min-h-screen ${themeBg} flex items-center justify-center p-4`}>
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className="confetti"
-            style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 2}s`, animationDuration: `${2 + Math.random() * 2}s` }}>
-            {["🎉", "🎊", "⭐", "✨", "🌟", "💫", "🎯", "🏆"][i % 8]}
+        {CONFETTI_ITEMS.map(({ idx, left, animationDelay, animationDuration }) => (
+          <div key={idx} className="confetti"
+            style={{ left, animationDelay, animationDuration }}>
+            {["🎉", "🎊", "⭐", "✨", "🌟", "💫", "🎯", "🏆"][idx % 8]}
           </div>
         ))}
         <div className="w-full max-w-md text-center space-y-6 reveal">
