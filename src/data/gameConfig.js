@@ -28,21 +28,6 @@ export const DEFAULTS = {
 // ═══════════════════════════════════════════════════════════════════
 // WORD BANK — dynamic dictionary loader (memory friendly)
 // ═══════════════════════════════════════════════════════════════════
-export const WORD_BANK = {};
-
-export const DICTIONARY_CATEGORIES = Object.freeze([
-  "general",
-  "animals",
-  "food",
-  "actions",
-  "movies",
-  "places",
-  "professions",
-  "history",
-  "israeliana",
-  "tech",
-]);
-
 const CATEGORY_IMPORTERS = {
   general: () => import("./dictionary/general.json"),
   animals: () => import("./dictionary/animals.json"),
